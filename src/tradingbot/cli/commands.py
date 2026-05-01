@@ -90,12 +90,23 @@ def strategies() -> None:
     from tradingbot.strategy.registry import list_strategies
 
     available = list_strategies()
-    if available:
-        click.echo("Available strategies:")
-        for name in available:
-            click.echo(f"  • {name}")
-    else:
+    if not available:
         click.echo("No strategies registered.")
+        return
+        
+    click.echo("\nRegistered Strategies:")
+    for name in available:
+        click.echo(f"  - {name}")
+
+
+@cli.command()
+@click.option("--host", default="0.0.0.0", help="Host to bind")
+@click.option("--port", default=8000, help="Port to bind")
+def dashboard(host: str, port: int):
+    """Run the trading bot dashboard API server."""
+    import uvicorn
+    click.echo(f"Starting Trading Bot Dashboard on http://{host}:{port}")
+    uvicorn.run("tradingbot.api.main:app", host=host, port=port, reload=False)
 
 
 @cli.command()
