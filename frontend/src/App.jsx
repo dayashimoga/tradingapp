@@ -104,7 +104,32 @@ function App() {
             <span className={`pulse-dot ${isConnected ? 'active' : 'inactive'}`}></span>
             <span className="text-muted text-sm">{isConnected ? 'WS Connected' : 'Disconnected'}</span>
           </div>
-          <div className="badge badge-neutral">{status?.mode || '...'} Mode</div>
+          <button 
+            className={`mode-toggle ${status?.mode === 'live' ? 'live' : 'paper'}`}
+            onClick={async () => {
+              const currentMode = status?.mode || 'paper';
+              const newMode = currentMode === 'live' ? 'paper' : 'live';
+              if (newMode === 'live' && !window.confirm("WARNING: You are about to switch to LIVE trading. Real funds will be used. Proceed?")) return;
+              try {
+                const res = await fetch('http://localhost:8000/api/bot/mode', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ mode: newMode })
+                });
+                const data = await res.json();
+                alert(data.message);
+                if (data.message.includes("restarting")) {
+                  setTimeout(() => window.location.reload(), 3000);
+                }
+              } catch (e) {
+                console.error(e);
+                alert("Failed to switch mode. Ensure backend is running.");
+              }
+            }}
+            title="Click to toggle Live/Paper mode"
+          >
+            {status?.mode === 'live' ? 'LIVE MODE' : 'PAPER MODE'}
+          </button>
           <div className={`badge ${isRunning ? 'badge-success' : 'badge-danger'}`}>
             {isRunning ? (status?.state === 'TRANSACTING' ? 'TRANSACTING' : 'ANALYZING') : 'STOPPED'}
           </div>
@@ -162,7 +187,7 @@ function App() {
       <div className="main-grid">
         <div className="side-stack">
           {/* Portfolio Performance */}
-          <div className="glass-panel">
+          <div className="glass-panel panel-portfolio">
             <div className="section-header">
               <div className="section-title"><TrendingUp size={16} /> Portfolio Performance</div>
               <span className="badge badge-neutral">{portfolioHistory.length} snapshots</span>
@@ -186,10 +211,12 @@ function App() {
           </div>
 
           {/* TradingView Candlestick Chart */}
-          <TradingChart candleData={candleData} chartMarkers={chartMarkers} symbols={symbols.length > 0 ? symbols : ['BTC/USDT', 'ETH/USDT']} />
+          <div className="panel-chart" style={{ display: 'flex', flexDirection: 'column', gap: '1rem', minHeight: '500px' }}>
+            <TradingChart candleData={candleData} chartMarkers={chartMarkers} symbols={symbols.length > 0 ? symbols : ['BTC/USDT', 'ETH/USDT']} />
+          </div>
 
           {/* Open Positions */}
-          <div className="glass-panel">
+          <div className="glass-panel panel-positions">
             <div className="section-header">
               <div className="section-title"><List size={16} /> Open Positions</div>
               <span className="badge badge-neutral">{Object.keys(portfolio.positions || {}).length} active</span>
@@ -223,10 +250,12 @@ function App() {
 
         {/* RIGHT SIDEBAR */}
         <div className="side-stack">
-          <ManualTradeTerminal symbols={symbols.length > 0 ? symbols : ['BTC/USDT', 'ETH/USDT']} executeManualTrade={executeManualTrade} />
+          <div className="panel-manual">
+            <ManualTradeTerminal symbols={symbols.length > 0 ? symbols : ['BTC/USDT', 'ETH/USDT']} executeManualTrade={executeManualTrade} />
+          </div>
 
           {/* Strategy Brain */}
-          <div className="glass-panel">
+          <div className="glass-panel panel-strategy">
             <div className="section-header">
               <div className="section-title"><Brain size={16} /> Strategy Brain</div>
             </div>
@@ -269,7 +298,7 @@ function App() {
           </div>
 
           {/* System Health */}
-          <div className="glass-panel">
+          <div className="glass-panel panel-health">
             <div className="section-header">
               <div className="section-title"><Cpu size={16} /> System Health</div>
               <span className={`badge ${health?.status === 'healthy' ? 'badge-success' : 'badge-danger'}`}>{health?.status || 'INIT'}</span>
@@ -286,7 +315,7 @@ function App() {
           </div>
 
           {/* Signal Analysis */}
-          <div className="glass-panel">
+          <div className="glass-panel panel-signal">
             <div className="section-header"><div className="section-title"><BarChart3 size={16} /> Signal Analysis</div></div>
             {signalStats.total > 0 ? (
               <>
@@ -314,7 +343,7 @@ function App() {
 
           {/* Risk Dashboard */}
           {riskState && (
-            <div className="glass-panel">
+            <div className="glass-panel panel-risk">
               <div className="section-header">
                 <div className="section-title"><AlertTriangle size={16} /> Risk Management</div>
                 <button
@@ -346,7 +375,7 @@ function App() {
 
           {/* Analytics */}
           {analytics && analytics.total_trades > 0 && (
-            <div className="glass-panel">
+            <div className="glass-panel panel-analytics">
               <div className="section-header"><div className="section-title"><Gauge size={16} /> Performance Analytics</div></div>
               <div className="health-grid">
                 <div className="health-item"><span className="health-label">Total Return</span><span className="health-value" style={{ color: analytics.total_return_pct >= 0 ? '#10b981' : '#ef4444' }}>{analytics.total_return_pct}%</span></div>
@@ -360,7 +389,7 @@ function App() {
           )}
 
           {/* Trade Ledger */}
-          <div className="glass-panel">
+          <div className="glass-panel panel-ledger">
             <div className="section-header">
               <div className="section-title"><DollarSign size={16} /> Trade Ledger</div>
               <span className="badge badge-neutral">{trades.length} total</span>
@@ -403,7 +432,7 @@ function App() {
       </div>
 
       {/* ALGORITHMIC FEED */}
-      <div className="glass-panel">
+      <div className="glass-panel panel-algo">
         <div className="section-header">
           <div className="section-title"><Terminal size={16} /> Algorithmic Feed</div>
           <span className="badge badge-neutral">{logs.length} events</span>

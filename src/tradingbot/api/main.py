@@ -81,12 +81,25 @@ def _build_engine(config):
     event_bus = EventBus()
     eng = Engine(config=config, event_bus=event_bus)
 
-    # 1. Data feed — simulated so the dashboard always has live data
-    feed = SimulatedDataFeed(
-        symbols=config.data.symbols,
-        interval=3.0,
-        volatility=0.002,
-    )
+    # 1. Data feed
+    if config.bot.mode == "live" and config.execution.live_trading.broker == "ccxt":
+        from tradingbot.data.feeds.ccxt_feed import CCXTDataFeed
+        import os
+        feed = CCXTDataFeed(
+            exchange_id=config.execution.live_trading.exchange_id,
+            symbols=config.data.symbols,
+            timeframe=config.data.timeframe,
+            api_key=os.getenv("TRADINGBOT_CCXT_API_KEY", ""),
+            secret=os.getenv("TRADINGBOT_CCXT_SECRET", ""),
+            sandbox=config.execution.live_trading.sandbox
+        )
+    else:
+        from tradingbot.data.feeds.simulator import SimulatedDataFeed
+        feed = SimulatedDataFeed(
+            symbols=config.data.symbols,
+            interval=3.0,
+            volatility=0.002,
+        )
     eng.register_data_feed(feed)
 
     # 2. Strategy
@@ -97,10 +110,6 @@ def _build_engine(config):
     )
     eng.register_strategy(strategy)
 
-    # Initialize Database here for the tracker
-    # Actually, building the engine is synchronous, but db.initialize is async.
-    # We will set the trade_repo externally in lifespan after DB is initialized.
-    
     # 3. Portfolio tracker
     initial_capital = config.execution.paper_trading.initial_balance
     portfolio_tracker = PortfolioTracker(initial_cash=initial_capital)
@@ -114,12 +123,35 @@ def _build_engine(config):
     )
     eng.register_risk_manager(risk_manager)
 
-    # 5. Order manager with the actual paper broker
-    from tradingbot.execution.brokers.paper_broker import PaperBroker
-    paper_broker = PaperBroker(initial_balance=initial_capital)
+    # 5. Order manager
+    if config.bot.mode == "live":
+        import os
+        if config.execution.live_trading.broker == "ccxt":
+            from tradingbot.execution.brokers.ccxt_broker import CCXTBroker
+            api_key = os.getenv("TRADINGBOT_CCXT_API_KEY", "")
+            secret = os.getenv("TRADINGBOT_CCXT_SECRET", "")
+            broker = CCXTBroker(
+                exchange_id=config.execution.live_trading.exchange_id,
+                api_key=api_key,
+                secret=secret,
+                sandbox=config.execution.live_trading.sandbox
+            )
+        else:
+            from tradingbot.execution.brokers.alpaca_broker import AlpacaBroker
+            api_key = os.getenv("TRADINGBOT_ALPACA_API_KEY", "")
+            secret = os.getenv("TRADINGBOT_ALPACA_SECRET_KEY", "")
+            broker = AlpacaBroker(
+                api_key=api_key,
+                secret_key=secret,
+                paper=config.execution.live_trading.sandbox
+            )
+    else:
+        from tradingbot.execution.brokers.paper_broker import PaperBroker
+        broker = PaperBroker(initial_balance=initial_capital)
+        
     order_manager = OrderManager(
         config=config.execution,
-        broker=paper_broker,
+        broker=broker,
         event_bus=event_bus,
     )
     eng.register_order_manager(order_manager)

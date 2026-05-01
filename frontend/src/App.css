@@ -132,14 +132,41 @@
 /* ===================== MAIN GRID ===================== */
 .main-grid {
   display: grid;
-  grid-template-columns: 2fr 1fr;
+  grid-template-columns: 1fr;
   gap: 1.25rem;
 }
 
+@media (min-width: 1024px) {
+  .main-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+@media (min-width: 1400px) {
+  .main-grid {
+    grid-template-columns: 300px 1fr 300px;
+    grid-template-areas:
+      "portfolio chart     strategy"
+      "signal    chart     manual"
+      "health    positions risk"
+      "analytics ledger    algo";
+  }
+
+  .panel-portfolio { grid-area: portfolio; }
+  .panel-chart { grid-area: chart; }
+  .panel-positions { grid-area: positions; }
+  .panel-strategy { grid-area: strategy; }
+  .panel-health { grid-area: health; }
+  .panel-signal { grid-area: signal; }
+  .panel-risk { grid-area: risk; }
+  .panel-analytics { grid-area: analytics; }
+  .panel-ledger { grid-area: ledger; }
+  .panel-algo { grid-area: algo; }
+  .panel-manual { grid-area: manual; }
+}
+
 .side-stack {
-  display: flex;
-  flex-direction: column;
-  gap: 1.25rem;
+  display: contents;
 }
 
 /* ===================== TABLES ===================== */

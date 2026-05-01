@@ -21,7 +21,7 @@ RUN apt-get update && \
 FROM base AS deps
 COPY pyproject.toml README.md ./
 COPY src/ ./src/
-RUN pip install --no-cache-dir ".[dashboard,alerts]"
+RUN pip install --no-cache-dir ".[dashboard,alerts,ml,dev]"
 
 # ---- Production stage ----
 FROM base AS production

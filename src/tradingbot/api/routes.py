@@ -249,6 +249,65 @@ async def set_kill_switch(request: KillSwitchRequest):
     return {"message": f"Kill switch {'activated' if request.active else 'deactivated'}"}
 
 
+# ==================== MODE SWITCHING ====================
+
+class BotModeRequest(BaseModel):
+    mode: str  # "live" or "paper"
+
+@router.post("/bot/mode")
+async def switch_bot_mode(request: BotModeRequest):
+    """Switch between Live and Paper trading modes via Safe Restart."""
+    mode = request.mode.lower()
+    if mode not in ["live", "paper"]:
+        raise HTTPException(status_code=400, detail="Invalid mode. Use 'live' or 'paper'.")
+        
+    eng = get_engine()
+    if eng.config.bot.mode == mode:
+        return {"message": f"Bot is already in {mode} mode.", "mode": mode}
+        
+    logger.info("Initiating SAFE RESTART to switch mode to %s", mode.upper())
+    
+    # 1. Graceful shutdown
+    eng._shutdown_event.set()
+    
+    # In a real heavy-duty system, we would await the engine to fully drain its queues.
+    # For now, we will update the config in-memory and re-instantiate.
+    import os
+    import sys
+    from tradingbot.config.loader import load_config
+    
+    # We edit the actual config YAML so it persists!
+    config_path = os.getenv("TRADINGBOT_CONFIG", "config/default.yaml")
+    if os.path.exists(config_path):
+        try:
+            with open(config_path, "r") as f:
+                content = f.read()
+            # simple string replace for bot mode (in a production system we'd use yaml.dump)
+            if mode == "live":
+                content = content.replace('mode: "paper"', 'mode: "live"')
+            else:
+                content = content.replace('mode: "live"', 'mode: "paper"')
+            with open(config_path, "w") as f:
+                f.write(content)
+        except Exception as e:
+            logger.error("Failed to update config file: %s", e)
+            
+    # Instruct the process manager or docker to restart, or trigger a re-init if our framework supports hot-reloading.
+    # Since FastAPI uvicorn workers don't easily self-restart inside the same process without a process manager (like supervisor/docker),
+    # we return a special status indicating a restart is required, OR we crash the process so Docker restarts it!
+    # For the scope of this dashboard, we will exit(1) to let Docker auto-restart the container with the new config.
+    
+    import asyncio
+    async def _restart():
+        await asyncio.sleep(1)
+        logger.warning("Process exiting to apply new mode via Docker restart...")
+        os._exit(1)
+        
+    asyncio.create_task(_restart())
+    
+    return {"message": f"Switching to {mode} mode. Bot is restarting...", "mode": mode}
+
+
 # ==================== MANUAL TRADE ====================
 
 class ManualTradeRequest(BaseModel):

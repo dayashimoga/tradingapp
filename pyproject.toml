@@ -55,6 +55,9 @@ dashboard = [
 ml = [
     "scikit-learn>=1.4.0",
     "torch>=2.2.0",
+    "xgboost>=2.0.0",
+    "yfinance>=0.2.0",
+    "vaderSentiment>=3.3.0",
 ]
 dev = [
     "pytest>=8.0.0",

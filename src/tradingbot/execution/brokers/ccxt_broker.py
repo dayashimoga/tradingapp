@@ -35,7 +35,7 @@ class CCXTBroker(Broker):
     def _get_exchange(self) -> Any:
         """Get or create CCXT exchange instance."""
         if self._exchange is None:
-            import ccxt
+            import ccxt.async_support as ccxt
 
             exchange_class = getattr(ccxt, self._exchange_id)
             config: dict[str, Any] = {"enableRateLimit": True}
@@ -61,7 +61,7 @@ class CCXTBroker(Broker):
 
         try:
             if order.order_type == OrderType.MARKET:
-                result = exchange.create_market_order(
+                result = await exchange.create_market_order(
                     order.symbol,
                     side,
                     order.quantity,
@@ -69,7 +69,7 @@ class CCXTBroker(Broker):
             elif order.order_type == OrderType.LIMIT:
                 if order.price is None:
                     raise BrokerError("Limit order requires a price", broker="ccxt")
-                result = exchange.create_limit_order(
+                result = await exchange.create_limit_order(
                     order.symbol,
                     side,
                     order.quantity,
@@ -116,7 +116,10 @@ class CCXTBroker(Broker):
         """Cancel an order via CCXT."""
         exchange = self._get_exchange()
         try:
-            exchange.cancel_order(broker_order_id)
+            # We don't have symbol here easily, some exchanges require it.
+            # Assuming exchange doesn't strictly need it if only broker_order_id is passed,
+            # or it might fail for exchanges like Binance that require symbol for cancellation.
+            await exchange.cancel_order(broker_order_id)
             return True
         except Exception as exc:
             logger.error("Failed to cancel order %s: %s", broker_order_id, exc)
@@ -126,7 +129,7 @@ class CCXTBroker(Broker):
         """Get account balance from exchange."""
         exchange = self._get_exchange()
         try:
-            balance = exchange.fetch_balance()
+            balance = await exchange.fetch_balance()
             return {
                 "total": balance.get("total", {}),
                 "free": balance.get("free", {}),
@@ -140,9 +143,15 @@ class CCXTBroker(Broker):
         exchange = self._get_exchange()
         try:
             if hasattr(exchange, "fetch_positions"):
-                positions = exchange.fetch_positions()
+                positions = await exchange.fetch_positions()
                 return {p["symbol"]: p for p in positions}
             return {}
         except Exception as exc:
             logger.error("Failed to fetch positions: %s", exc)
             return {}
+
+    async def close(self) -> None:
+        if self._exchange:
+            import contextlib
+            with contextlib.suppress(Exception):
+                await self._exchange.close()

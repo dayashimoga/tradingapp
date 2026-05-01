@@ -44,6 +44,12 @@ execution:
   retry_delay: 1.0              # seconds (base for exponential backoff)
   order_timeout: 30             # seconds
   slippage_tolerance: 0.001     # 0.1%
+  paper_trading:
+    initial_balance: 10000.0
+  live_trading:
+    broker: "ccxt" # ccxt | alpaca
+    exchange_id: "binance"
+    sandbox: true # Default to testnet/sandbox for safety
 
 # --- Persistence ---
 database:
