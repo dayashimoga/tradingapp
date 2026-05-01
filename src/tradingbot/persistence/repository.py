@@ -31,6 +31,9 @@ class TradeRepository:
         order_id: str = "",
         broker_order_id: str = "",
         strategy_name: str = "",
+        reason: str = "",
+        pnl: float = 0.0,
+        metadata_json: str = "{}",
     ) -> int:
         """Save a trade record and return its ID."""
         async with await self._db.get_session() as session:
@@ -43,6 +46,9 @@ class TradeRepository:
                 order_id=order_id,
                 broker_order_id=broker_order_id,
                 strategy_name=strategy_name,
+                reason=reason,
+                pnl=pnl,
+                metadata_json=metadata_json,
             )
             session.add(record)
             await session.commit()

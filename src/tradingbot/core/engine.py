@@ -12,10 +12,12 @@ from tradingbot.core.event_bus import EventBus
 from tradingbot.core.events import (
     AlertEvent,
     AlertLevel,
+    Event,
     EventType,
     HeartbeatEvent,
     MarketDataEvent,
 )
+from tradingbot.data.history import OHLCVHistory
 
 if TYPE_CHECKING:
     from tradingbot.config.schema import TradingBotConfig
@@ -56,6 +58,9 @@ class Engine:
         self._order_manager: OrderManager | None = None
         self._portfolio_tracker: PortfolioTracker | None = None
 
+        # OHLCV history buffer for chart data
+        self._ohlcv_history = OHLCVHistory()
+
         # Heartbeat
         self._heartbeat_task: asyncio.Task[None] | None = None
 
@@ -89,8 +94,27 @@ class Engine:
         self._portfolio_tracker = portfolio_tracker
         logger.info("Registered portfolio tracker")
 
+    async def _update_prices(self, event: Event) -> None:
+        """Update portfolio tracker with latest prices."""
+        if isinstance(event, MarketDataEvent) and self._portfolio_tracker:
+            self._portfolio_tracker.update_price(event.symbol, event.close)
+
     async def _setup_event_handlers(self) -> None:
         """Wire up event subscriptions between components."""
+        # OHLCV history listens to market data (highest priority)
+        self.event_bus.subscribe(
+            EventType.MARKET_DATA,
+            self._ohlcv_history.on_market_data,
+            priority=10,
+        )
+
+        # Price updates to portfolio tracker
+        self.event_bus.subscribe(
+            EventType.MARKET_DATA,
+            self._update_prices,
+            priority=20,
+        )
+
         # Strategies listen to market data
         for strategy in self._strategies:
             self.event_bus.subscribe(

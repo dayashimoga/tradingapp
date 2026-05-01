@@ -18,12 +18,13 @@ class PortfolioTracker:
     Processes FillEvents from the order manager.
     """
 
-    def __init__(self, initial_cash: float = 100000.0) -> None:
+    def __init__(self, initial_cash: float = 100000.0, trade_repo=None) -> None:
         self._cash = initial_cash
         self._initial_cash = initial_cash
         self._positions: dict[str, Position] = {}
         self._trades: list[Trade] = []
         self._realized_pnl = 0.0
+        self._trade_repo = trade_repo
 
     @property
     def cash(self) -> float:
@@ -92,13 +93,16 @@ class PortfolioTracker:
             commission=event.commission,
             order_id=event.order_id,
             broker_order_id=event.broker_order_id,
+            strategy_name=event.strategy_name,
+            reason=event.reason,
+            metadata=event.metadata,
         )
         self._trades.append(trade)
 
         if event.side == SignalSide.BUY:
             self._process_buy(event)
         elif event.side == SignalSide.SELL:
-            self._process_sell(event)
+            self._process_sell(event, trade)
 
         logger.info(
             "Portfolio updated: cash=%.2f, positions=%d, total_value=%.2f",
@@ -106,6 +110,22 @@ class PortfolioTracker:
             len(self._positions),
             self.total_value,
         )
+
+        if self._trade_repo:
+            import json
+            await self._trade_repo.save_trade(
+                symbol=trade.symbol,
+                side=trade.side,
+                quantity=trade.quantity,
+                price=trade.price,
+                commission=trade.commission,
+                order_id=trade.order_id,
+                broker_order_id=trade.broker_order_id,
+                strategy_name=trade.strategy_name,
+                reason=trade.reason,
+                pnl=trade.realized_pnl,
+                metadata_json=json.dumps(trade.metadata) if trade.metadata else "{}",
+            )
 
     def _process_buy(self, fill: FillEvent) -> None:
         """Process a buy fill."""
@@ -129,7 +149,7 @@ class PortfolioTracker:
                 current_price=fill.fill_price,
             )
 
-    def _process_sell(self, fill: FillEvent) -> None:
+    def _process_sell(self, fill: FillEvent, trade: Trade) -> None:
         """Process a sell fill."""
         proceeds = fill.fill_price * fill.quantity - fill.commission
         self._cash += proceeds
@@ -139,6 +159,7 @@ class PortfolioTracker:
             # Calculate realized P&L for the sold portion
             pnl = (fill.fill_price - pos.avg_entry_price) * fill.quantity - fill.commission
             self._realized_pnl += pnl
+            trade.realized_pnl = pnl
 
             pos.quantity -= fill.quantity
             pos.current_price = fill.fill_price

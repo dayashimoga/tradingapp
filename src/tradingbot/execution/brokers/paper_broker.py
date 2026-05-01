@@ -135,6 +135,9 @@ class PaperBroker(Broker):
             commission=commission,
             order_id=order.event_id,
             broker_order_id=broker_order_id,
+            strategy_name=order.strategy_name,
+            reason=order.reason,
+            metadata=order.metadata,
         )
 
     async def cancel_order(self, broker_order_id: str) -> bool:

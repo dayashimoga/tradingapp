@@ -161,6 +161,9 @@ class RiskManager:
             quantity=quantity,
             price=event.suggested_price if event.suggested_price else None,
             signal_id=event.event_id,
+            strategy_name=event.strategy_name,
+            reason=event.reason,
+            metadata=event.metadata,
         )
         logger.info(
             "Signal APPROVED for %s: %s qty=%.6f",
@@ -204,3 +207,31 @@ class RiskManager:
             quantity = max_value
 
         return quantity
+
+    def get_state(self) -> dict:
+        """Get current risk state for dashboard visualization."""
+        return {
+            "daily_pnl": self._daily_pnl,
+            "max_daily_loss": self._config.max_daily_loss,
+            "daily_loss_pct": abs(self._daily_pnl) / self._config.max_daily_loss * 100 if self._config.max_daily_loss > 0 else 0,
+            "open_positions": len(self._open_positions),
+            "max_open_positions": self._config.max_open_positions,
+            "total_exposure": self._total_exposure,
+            "max_total_exposure": self._config.max_total_exposure,
+            "max_position_size": self._config.max_position_size,
+            "circuit_breaker_active": self.is_circuit_breaker_active,
+            "circuit_breaker_until": self._circuit_breaker_until.isoformat() if self._circuit_breaker_until else None,
+            "approved_count": self._approved_count,
+            "rejected_count": self._rejected_count,
+            "portfolio_value": self._portfolio_value,
+            "kill_switch": self._circuit_breaker_active and self._circuit_breaker_until is None,
+        }
+
+    def set_kill_switch(self, active: bool) -> None:
+        """Set or clear the kill switch (indefinite circuit breaker)."""
+        self._circuit_breaker_active = active
+        if active:
+            self._circuit_breaker_until = None  # Indefinite
+        else:
+            self._circuit_breaker_until = None
+

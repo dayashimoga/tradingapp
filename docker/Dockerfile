@@ -19,30 +19,29 @@ RUN apt-get update && \
 
 # ---- Dependencies stage ----
 FROM base AS deps
-COPY pyproject.toml ./
-RUN pip install --no-cache-dir -e ".[alerts]"
+COPY pyproject.toml README.md ./
+COPY src/ ./src/
+RUN pip install --no-cache-dir ".[dashboard,alerts]"
 
 # ---- Production stage ----
 FROM base AS production
 COPY --from=deps /usr/local/lib/python3.12/site-packages /usr/local/lib/python3.12/site-packages
 COPY --from=deps /usr/local/bin /usr/local/bin
 
-# Copy application code
-COPY src/ ./src/
+# Copy runtime config files
 COPY config/ ./config/
-COPY pyproject.toml ./
-
-# Install the app itself
-RUN pip install --no-cache-dir -e .
 
 # Create non-root user
 RUN useradd --create-home --shell /bin/bash tradingbot
+RUN mkdir -p /app/data && chown -R tradingbot:tradingbot /app
 USER tradingbot
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=10s --retries=3 \
     CMD python -c "import tradingbot; print('ok')" || exit 1
 
+EXPOSE 8000
+
 # Default command
 ENTRYPOINT ["tradingbot"]
-CMD ["run", "--mode", "paper"]
+CMD ["dashboard", "--host", "0.0.0.0", "--port", "8000"]

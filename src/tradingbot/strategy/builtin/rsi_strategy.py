@@ -126,6 +126,28 @@ class RSIStrategy(Strategy):
         self._prev_rsi = rsi
         return signal
 
+    def get_state(self) -> dict[str, any]:
+        """Get current RSI state for dashboard."""
+        rsi = self._calculate_rsi()
+        zone = "warming_up"
+        if rsi is not None:
+            if rsi < self._oversold:
+                zone = "oversold"
+            elif rsi > self._overbought:
+                zone = "overbought"
+            else:
+                zone = "neutral"
+        return {
+            **super().get_state(),
+            "type": "Mean Reversion",
+            "rsi": round(rsi, 1) if rsi is not None else None,
+            "zone": zone,
+            "overbought": self._overbought,
+            "oversold": self._oversold,
+            "period": self._period,
+            "data_points": len(self._prices),
+        }
+
     def reset(self) -> None:
         """Reset strategy state."""
         self._prices.clear()

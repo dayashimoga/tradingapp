@@ -30,6 +30,9 @@ class TradeRecord(Base):
     strategy_name = Column(String(100))
     timestamp = Column(DateTime, default=lambda: datetime.now(UTC))
     notes = Column(Text, default="")
+    reason = Column(Text, default="")
+    pnl = Column(Float, default=0.0)
+    metadata_json = Column(Text, default="{}")
 
 
 class PositionRecord(Base):

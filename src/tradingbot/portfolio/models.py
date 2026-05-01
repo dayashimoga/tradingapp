@@ -56,6 +56,10 @@ class Trade:
     timestamp: datetime = field(default_factory=lambda: datetime.now(UTC))
     order_id: str = ""
     broker_order_id: str = ""
+    strategy_name: str = ""
+    reason: str = ""
+    metadata: dict = field(default_factory=dict)
+    realized_pnl: float = 0.0
 
     @property
     def net_value(self) -> float:

@@ -78,6 +78,18 @@ class Strategy(abc.ABC):
             A SignalEvent if conditions are met, or None for no action.
         """
 
+    def get_state(self) -> dict[str, any]:
+        """
+        Get current strategy state for dashboard visualization.
+
+        Returns a dict of indicator values, signal state, warmup status, etc.
+        Subclasses should override this to provide strategy-specific data.
+        """
+        return {
+            "name": self._name,
+            "warmed_up": self._is_warmed_up,
+        }
+
     @abc.abstractmethod
     def reset(self) -> None:
         """Reset strategy state (e.g., for backtesting new period)."""

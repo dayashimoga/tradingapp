@@ -112,6 +112,24 @@ class SMACrossoverStrategy(Strategy):
         self._prev_fast_above = fast_above
         return signal
 
+    def get_state(self) -> dict[str, any]:
+        """Get current SMA crossover state for dashboard."""
+        fast_sma = self._calculate_sma(self._fast_period)
+        slow_sma = self._calculate_sma(self._slow_period)
+        crossover = "warming_up"
+        if fast_sma is not None and slow_sma is not None:
+            crossover = "golden" if fast_sma > slow_sma else "death"
+        return {
+            **super().get_state(),
+            "type": "Trend Following",
+            "fast_sma": round(fast_sma, 2) if fast_sma else None,
+            "slow_sma": round(slow_sma, 2) if slow_sma else None,
+            "fast_period": self._fast_period,
+            "slow_period": self._slow_period,
+            "crossover": crossover,
+            "data_points": len(self._prices),
+        }
+
     def reset(self) -> None:
         """Reset strategy state."""
         self._prices.clear()

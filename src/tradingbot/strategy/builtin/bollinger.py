@@ -132,6 +132,32 @@ class BollingerBandStrategy(Strategy):
 
         return signal
 
+    def get_state(self) -> dict[str, any]:
+        """Get current Bollinger Band state for dashboard."""
+        bands = self._calculate_bands()
+        position = "warming_up"
+        middle = upper = lower = None
+        if bands is not None:
+            middle, upper, lower = bands
+            price = self._prices[-1] if self._prices else 0
+            if price <= lower:
+                position = "below_lower"
+            elif price >= upper:
+                position = "above_upper"
+            else:
+                position = "within"
+        return {
+            **super().get_state(),
+            "type": "Mean Reversion",
+            "middle_band": round(middle, 2) if middle else None,
+            "upper_band": round(upper, 2) if upper else None,
+            "lower_band": round(lower, 2) if lower else None,
+            "position": position,
+            "period": self._period,
+            "num_std": self._num_std,
+            "data_points": len(self._prices),
+        }
+
     def reset(self) -> None:
         """Reset strategy state."""
         self._prices.clear()

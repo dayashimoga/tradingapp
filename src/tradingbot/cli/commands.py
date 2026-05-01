@@ -6,6 +6,10 @@ import asyncio
 import sys
 
 import click
+from dotenv import load_dotenv
+
+# Automatically load API keys from .env if present
+load_dotenv()
 
 
 @click.group()

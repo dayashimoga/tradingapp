@@ -123,6 +123,9 @@ class OrderEvent(Event):
     status: OrderStatus = OrderStatus.PENDING
     broker_order_id: str = ""
     signal_id: str = ""  # Reference to originating signal
+    strategy_name: str = ""
+    reason: str = ""
+    metadata: dict[str, Any] = field(default_factory=dict)
 
 
 @dataclass(frozen=True)
@@ -137,6 +140,10 @@ class FillEvent(Event):
     commission: float = 0.0
     order_id: str = ""
     broker_order_id: str = ""
+    strategy_name: str = ""
+    reason: str = ""
+    metadata: dict[str, Any] = field(default_factory=dict)
+    realized_pnl: float = 0.0
 
 
 @dataclass(frozen=True)

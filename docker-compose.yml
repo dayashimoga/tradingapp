@@ -1,42 +1,61 @@
 # ============================================================
-# TradingBot — Docker Compose Full Stack
+# TradingBot — Full-Stack Automated Docker Orchestration
 # ============================================================
 version: "3.9"
 
 services:
-  # --- Trading Bot ---
-  tradingbot:
+  # --- 1. React Web Dashboard (Nginx) ---
+  frontend:
     build:
-      context: ..
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        # VITE_API_URL is empty because Nginx proxies /api and /ws 
+        # to the backend container automatically.
+        VITE_API_URL: ""
+    container_name: tradingbot_frontend
+    restart: unless-stopped
+    ports:
+      - "3000:80"  # Access the dashboard at http://localhost:3000
+    networks:
+      - trading_net
+    depends_on:
+      - backend
+
+  # --- 2. FastAPI Engine & Bot (Python) ---
+  backend:
+    build:
+      context: .
       dockerfile: docker/Dockerfile
-    container_name: tradingbot
+    container_name: tradingbot_backend
     restart: unless-stopped
     env_file:
-      - ../.env
+      - .env  # Inject live/paper trading keys securely
     volumes:
-      - ../config:/app/config:ro
+      - ./config:/app/config:ro
       - bot_data:/app/data
     ports:
+      - "8000:8000"  # Optional direct API access
       - "9090:9090"  # Prometheus metrics
     networks:
       - trading_net
     depends_on:
       - prometheus
 
-  # --- Prometheus ---
+  # --- 3. Prometheus (Metrics) ---
   prometheus:
     image: prom/prometheus:latest
     container_name: tradingbot_prometheus
     restart: unless-stopped
     volumes:
-      - ./prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./docker/prometheus.yml:/etc/prometheus/prometheus.yml:ro
       - prometheus_data:/prometheus
     ports:
       - "9091:9090"
     networks:
       - trading_net
 
-  # --- Grafana ---
+  # --- 4. Grafana (Visualizations) ---
   grafana:
     image: grafana/grafana:latest
     container_name: tradingbot_grafana
@@ -47,7 +66,7 @@ services:
     volumes:
       - grafana_data:/var/lib/grafana
     ports:
-      - "3000:3000"
+      - "3001:3000" # Grafana dashboard at http://localhost:3001
     networks:
       - trading_net
     depends_on:
