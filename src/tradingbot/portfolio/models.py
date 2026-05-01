@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 
 @dataclass
@@ -14,7 +14,7 @@ class Position:
     quantity: float = 0.0
     avg_entry_price: float = 0.0
     current_price: float = 0.0
-    opened_at: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
+    opened_at: datetime = field(default_factory=lambda: datetime.now(UTC))
 
     @property
     def market_value(self) -> float:
@@ -53,7 +53,7 @@ class Trade:
     quantity: float
     price: float
     commission: float = 0.0
-    timestamp: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
+    timestamp: datetime = field(default_factory=lambda: datetime.now(UTC))
     order_id: str = ""
     broker_order_id: str = ""
 
@@ -70,7 +70,7 @@ class Trade:
 class PortfolioSnapshot:
     """Point-in-time snapshot of portfolio state."""
 
-    timestamp: datetime = field(default_factory=lambda: datetime.now(timezone.utc))
+    timestamp: datetime = field(default_factory=lambda: datetime.now(UTC))
     cash: float = 0.0
     total_value: float = 0.0
     positions_value: float = 0.0

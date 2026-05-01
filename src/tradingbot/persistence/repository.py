@@ -3,12 +3,14 @@
 from __future__ import annotations
 
 import logging
-from datetime import datetime, timezone
+from typing import TYPE_CHECKING
 
 from sqlalchemy import select
 
-from tradingbot.persistence.database import Database
-from tradingbot.persistence.models import AlertRecord, PortfolioHistory, TradeRecord
+from tradingbot.persistence.models import PortfolioHistory, TradeRecord
+
+if TYPE_CHECKING:
+    from tradingbot.persistence.database import Database
 
 logger = logging.getLogger(__name__)
 

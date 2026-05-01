@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import logging
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 logger = logging.getLogger(__name__)
 
@@ -29,7 +29,7 @@ class TradingLimits:
 
     def _check_reset(self) -> None:
         """Reset daily counters if it's a new day."""
-        today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+        today = datetime.now(UTC).strftime("%Y-%m-%d")
         if today != self._reset_date:
             self._daily_loss = 0.0
             self._daily_trades = 0

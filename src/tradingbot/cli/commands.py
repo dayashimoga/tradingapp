@@ -84,9 +84,9 @@ def validate(config: str | None) -> None:
 def strategies() -> None:
     """List available trading strategies."""
     # Import builtins to trigger registration
+    import tradingbot.strategy.builtin.bollinger
+    import tradingbot.strategy.builtin.rsi_strategy
     import tradingbot.strategy.builtin.sma_crossover  # noqa: F401
-    import tradingbot.strategy.builtin.rsi_strategy  # noqa: F401
-    import tradingbot.strategy.builtin.bollinger  # noqa: F401
     from tradingbot.strategy.registry import list_strategies
 
     available = list_strategies()

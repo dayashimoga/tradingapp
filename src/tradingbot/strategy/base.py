@@ -4,10 +4,12 @@ from __future__ import annotations
 
 import abc
 import logging
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
-from tradingbot.core.event_bus import EventBus
 from tradingbot.core.events import Event, MarketDataEvent, SignalEvent
+
+if TYPE_CHECKING:
+    from tradingbot.core.event_bus import EventBus
 
 logger = logging.getLogger(__name__)
 

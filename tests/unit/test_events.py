@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
+import pytest
 
 from tradingbot.core.events import (
     AlertEvent,
@@ -151,4 +151,3 @@ class TestEvents:
         assert signal.metadata == {}
 
 
-import pytest

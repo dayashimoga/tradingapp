@@ -5,7 +5,7 @@ from __future__ import annotations
 import logging
 import math
 from collections import deque
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 logger = logging.getLogger(__name__)
 
@@ -36,12 +36,11 @@ class CircuitBreaker:
     @property
     def is_tripped(self) -> bool:
         """Whether the circuit breaker is currently tripped."""
-        if self._tripped and self._tripped_until:
-            if datetime.now(timezone.utc) >= self._tripped_until:
-                self._tripped = False
-                self._tripped_until = None
-                logger.info("Circuit breaker reset after cooldown")
-                return False
+        if self._tripped and self._tripped_until and datetime.now(UTC) >= self._tripped_until:
+            self._tripped = False
+            self._tripped_until = None
+            logger.info("Circuit breaker reset after cooldown")
+            return False
         return self._tripped
 
     @property
@@ -54,7 +53,7 @@ class CircuitBreaker:
         """Remaining cooldown time in seconds, or 0 if not tripped."""
         if not self._tripped or not self._tripped_until:
             return 0.0
-        remaining = (self._tripped_until - datetime.now(timezone.utc)).total_seconds()
+        remaining = (self._tripped_until - datetime.now(UTC)).total_seconds()
         return max(0.0, remaining)
 
     def check_price(self, price: float) -> bool:
@@ -98,7 +97,7 @@ class CircuitBreaker:
     def _trip(self, z_score: float) -> None:
         """Trip the circuit breaker."""
         self._tripped = True
-        self._tripped_until = datetime.now(timezone.utc) + timedelta(
+        self._tripped_until = datetime.now(UTC) + timedelta(
             minutes=self._cooldown_minutes
         )
         self._trip_count += 1

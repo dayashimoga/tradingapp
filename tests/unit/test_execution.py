@@ -1,17 +1,20 @@
 """Unit tests for order manager, retry, paper broker, and portfolio tracker."""
 
 from __future__ import annotations
+
+from unittest.mock import AsyncMock
+
 import pytest
-from unittest.mock import AsyncMock, MagicMock
+
 from tradingbot.config.schema import ExecutionConfig
 from tradingbot.core.event_bus import EventBus
 from tradingbot.core.events import EventType, FillEvent, OrderEvent, OrderType, SignalSide
+from tradingbot.execution.brokers.base import BrokerError
+from tradingbot.execution.brokers.paper_broker import PaperBroker
 from tradingbot.execution.order_manager import OrderManager
 from tradingbot.execution.retry import RetryExhaustedError, retry_async
-from tradingbot.execution.brokers.paper_broker import PaperBroker
-from tradingbot.execution.brokers.base import BrokerError
+from tradingbot.portfolio.models import PortfolioSnapshot, Position, Trade
 from tradingbot.portfolio.tracker import PortfolioTracker
-from tradingbot.portfolio.models import Position, Trade, PortfolioSnapshot
 
 
 class TestRetry:

@@ -4,12 +4,12 @@ from __future__ import annotations
 
 import uuid
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
-from enum import Enum
+from datetime import UTC, datetime
+from enum import StrEnum
 from typing import Any
 
 
-class EventType(str, Enum):
+class EventType(StrEnum):
     """Enumeration of all event types in the trading system."""
 
     MARKET_DATA = "market_data"
@@ -22,7 +22,7 @@ class EventType(str, Enum):
     HEARTBEAT = "heartbeat"
 
 
-class SignalSide(str, Enum):
+class SignalSide(StrEnum):
     """Signal direction."""
 
     BUY = "buy"
@@ -30,7 +30,7 @@ class SignalSide(str, Enum):
     HOLD = "hold"
 
 
-class OrderType(str, Enum):
+class OrderType(StrEnum):
     """Order type."""
 
     MARKET = "market"
@@ -39,7 +39,7 @@ class OrderType(str, Enum):
     STOP_LIMIT = "stop_limit"
 
 
-class OrderStatus(str, Enum):
+class OrderStatus(StrEnum):
     """Order lifecycle status."""
 
     PENDING = "pending"
@@ -51,7 +51,7 @@ class OrderStatus(str, Enum):
     EXPIRED = "expired"
 
 
-class AlertLevel(str, Enum):
+class AlertLevel(StrEnum):
     """Alert severity level."""
 
     INFO = "info"
@@ -66,7 +66,7 @@ def _generate_id() -> str:
 
 def _utc_now() -> datetime:
     """Generate current UTC timestamp."""
-    return datetime.now(timezone.utc)
+    return datetime.now(UTC)
 
 
 @dataclass(frozen=True)

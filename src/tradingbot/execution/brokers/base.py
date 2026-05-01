@@ -3,9 +3,10 @@
 from __future__ import annotations
 
 import abc
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
-from tradingbot.core.events import FillEvent, OrderEvent
+if TYPE_CHECKING:
+    from tradingbot.core.events import FillEvent, OrderEvent
 
 
 class Broker(abc.ABC):

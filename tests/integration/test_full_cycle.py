@@ -1,16 +1,18 @@
 """Integration test — full signal-to-fill trading cycle."""
 
 from __future__ import annotations
+
 import pytest
+
+from tests.conftest import make_market_data
 from tradingbot.config.schema import ExecutionConfig, RiskConfig, TradingBotConfig
 from tradingbot.core.event_bus import EventBus
-from tradingbot.core.events import EventType, MarketDataEvent, SignalSide
+from tradingbot.core.events import EventType
 from tradingbot.execution.brokers.paper_broker import PaperBroker
 from tradingbot.execution.order_manager import OrderManager
 from tradingbot.portfolio.tracker import PortfolioTracker
 from tradingbot.risk.manager import RiskManager
 from tradingbot.strategy.builtin.sma_crossover import SMACrossoverStrategy
-from tests.conftest import make_market_data
 
 
 class TestFullCycle:
@@ -19,7 +21,7 @@ class TestFullCycle:
     @pytest.mark.asyncio
     async def test_buy_cycle(self):
         bus = EventBus()
-        config = TradingBotConfig()
+        TradingBotConfig()
 
         # Setup components
         strategy = SMACrossoverStrategy(
@@ -105,8 +107,8 @@ class TestEngineIntegration:
 
     @pytest.mark.asyncio
     async def test_register_components(self):
+
         from tradingbot.core.engine import Engine
-        from unittest.mock import MagicMock
         config = TradingBotConfig()
         engine = Engine(config=config)
 

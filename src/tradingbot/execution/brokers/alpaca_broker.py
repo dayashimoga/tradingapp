@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import logging
-import uuid
 from typing import Any
 
 from tradingbot.core.events import FillEvent, OrderEvent, OrderType, SignalSide
@@ -47,8 +46,8 @@ class AlpacaBroker(Broker):
         client = self._get_client()
 
         try:
-            from alpaca.trading.requests import MarketOrderRequest, LimitOrderRequest
             from alpaca.trading.enums import OrderSide, TimeInForce
+            from alpaca.trading.requests import LimitOrderRequest, MarketOrderRequest
 
             side = OrderSide.BUY if order.side == SignalSide.BUY else OrderSide.SELL
 

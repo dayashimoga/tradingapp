@@ -1,10 +1,12 @@
 """Unit tests for normalizer, logger, metrics, alerts, and persistence."""
 
 from __future__ import annotations
+
 import pytest
+
 from tradingbot.data.normalizer import DataNormalizer
-from tradingbot.monitoring.logger import setup_logging, get_logger
 from tradingbot.monitoring.alerts.base import AlertProvider
+from tradingbot.monitoring.logger import get_logger, setup_logging
 
 
 class TestDataNormalizer:

@@ -1,14 +1,16 @@
 """Unit tests for the core engine."""
 
 from __future__ import annotations
-import asyncio
+
+from unittest.mock import MagicMock
+
 import pytest
-from unittest.mock import AsyncMock, MagicMock, patch
+
+from tests.conftest import make_market_data
 from tradingbot.config.schema import TradingBotConfig
 from tradingbot.core.engine import Engine
 from tradingbot.core.event_bus import EventBus
-from tradingbot.core.events import EventType, MarketDataEvent
-from tests.conftest import make_market_data
+from tradingbot.core.events import EventType
 
 
 class TestEngine:
@@ -31,17 +33,17 @@ class TestEngine:
         assert len(engine._strategies) == 1
 
     def test_register_risk_manager(self):
-        from tradingbot.risk.manager import RiskManager
         from tradingbot.config.schema import RiskConfig
+        from tradingbot.risk.manager import RiskManager
         engine = Engine(config=TradingBotConfig())
         rm = RiskManager(config=RiskConfig(), event_bus=engine.event_bus)
         engine.register_risk_manager(rm)
         assert engine._risk_manager is rm
 
     def test_register_order_manager(self):
-        from tradingbot.execution.order_manager import OrderManager
-        from tradingbot.execution.brokers.paper_broker import PaperBroker
         from tradingbot.config.schema import ExecutionConfig
+        from tradingbot.execution.brokers.paper_broker import PaperBroker
+        from tradingbot.execution.order_manager import OrderManager
         engine = Engine(config=TradingBotConfig())
         om = OrderManager(
             config=ExecutionConfig(), broker=PaperBroker(), event_bus=engine.event_bus
@@ -74,9 +76,9 @@ class TestEngine:
 
     @pytest.mark.asyncio
     async def test_setup_event_handlers(self):
-        from tradingbot.strategy.builtin.sma_crossover import SMACrossoverStrategy
-        from tradingbot.risk.manager import RiskManager
         from tradingbot.config.schema import RiskConfig
+        from tradingbot.risk.manager import RiskManager
+        from tradingbot.strategy.builtin.sma_crossover import SMACrossoverStrategy
         engine = Engine(config=TradingBotConfig())
         s = SMACrossoverStrategy(params={"fast_period": 3, "slow_period": 5})
         engine.register_strategy(s)

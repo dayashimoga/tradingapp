@@ -10,7 +10,7 @@ logger = logging.getLogger(__name__)
 
 # Alert level emoji mapping
 LEVEL_EMOJI = {
-    "info": "ℹ️",
+    "info": "INFO",
     "warning": "⚠️",
     "critical": "🚨",
 }
@@ -42,8 +42,7 @@ class TelegramAlertProvider(AlertProvider):
                 "parse_mode": "Markdown",
             }
 
-            async with aiohttp.ClientSession() as session:
-                async with session.post(url, json=payload) as resp:
+            async with aiohttp.ClientSession() as session, session.post(url, json=payload) as resp:
                     if resp.status == 200:
                         logger.debug("Telegram alert sent: %s", title)
                         return True

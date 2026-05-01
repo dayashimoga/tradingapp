@@ -3,12 +3,15 @@
 from __future__ import annotations
 
 import asyncio
+import contextlib
 import logging
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
-from tradingbot.core.event_bus import EventBus
 from tradingbot.data.base import DataFeed
 from tradingbot.data.normalizer import DataNormalizer
+
+if TYPE_CHECKING:
+    from tradingbot.core.event_bus import EventBus
 
 logger = logging.getLogger(__name__)
 
@@ -108,10 +111,8 @@ class CCXTDataFeed(DataFeed):
         """Stop the data feed."""
         self._running = False
         if self._exchange:
-            try:
+            with contextlib.suppress(Exception):
                 self._exchange.close()
-            except Exception:
-                pass
         logger.info("CCXT data feed stopped")
 
     def is_connected(self) -> bool:

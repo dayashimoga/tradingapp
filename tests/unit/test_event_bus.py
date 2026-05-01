@@ -6,12 +6,8 @@ import pytest
 
 from tradingbot.core.event_bus import EventBus
 from tradingbot.core.events import (
-    AlertEvent,
     EventType,
-    HeartbeatEvent,
     MarketDataEvent,
-    SignalEvent,
-    SignalSide,
 )
 
 
@@ -122,7 +118,7 @@ class TestEventBus:
         await event_bus.publish(MarketDataEvent(source="test"))
 
         assert len(event_bus.dead_letter_queue) == 1
-        event, exc = event_bus.dead_letter_queue[0]
+        _event, exc = event_bus.dead_letter_queue[0]
         assert isinstance(exc, ValueError)
 
     @pytest.mark.asyncio

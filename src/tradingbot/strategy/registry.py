@@ -3,10 +3,11 @@
 from __future__ import annotations
 
 import logging
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
-from tradingbot.core.event_bus import EventBus
-from tradingbot.strategy.base import Strategy
+if TYPE_CHECKING:
+    from tradingbot.core.event_bus import EventBus
+    from tradingbot.strategy.base import Strategy
 
 logger = logging.getLogger(__name__)
 

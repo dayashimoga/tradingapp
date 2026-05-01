@@ -3,10 +3,9 @@
 from __future__ import annotations
 
 import logging
-from datetime import datetime, timezone
 
-from tradingbot.core.events import Event, FillEvent, PortfolioEvent, SignalSide
-from tradingbot.portfolio.models import Position, PortfolioSnapshot, Trade
+from tradingbot.core.events import Event, FillEvent, SignalSide
+from tradingbot.portfolio.models import PortfolioSnapshot, Position, Trade
 
 logger = logging.getLogger(__name__)
 

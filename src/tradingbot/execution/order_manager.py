@@ -5,13 +5,11 @@ from __future__ import annotations
 import logging
 from typing import TYPE_CHECKING
 
-from tradingbot.core.event_bus import EventBus
 from tradingbot.core.events import (
     AlertEvent,
     AlertLevel,
     ErrorEvent,
     Event,
-    FillEvent,
     OrderEvent,
 )
 from tradingbot.execution.brokers.base import Broker, BrokerError
@@ -19,6 +17,7 @@ from tradingbot.execution.retry import RetryExhaustedError, retry_async
 
 if TYPE_CHECKING:
     from tradingbot.config.schema import ExecutionConfig
+    from tradingbot.core.event_bus import EventBus
 
 logger = logging.getLogger(__name__)
 

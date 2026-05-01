@@ -1,14 +1,16 @@
 """Unit tests for risk manager, circuit breaker, position sizer, and limits."""
 
 from __future__ import annotations
+
 import pytest
+
 from tradingbot.config.schema import RiskConfig
 from tradingbot.core.event_bus import EventBus
 from tradingbot.core.events import EventType, SignalEvent, SignalSide
-from tradingbot.risk.manager import RiskManager
 from tradingbot.risk.circuit_breaker import CircuitBreaker
-from tradingbot.risk.position_sizer import PositionSizer
 from tradingbot.risk.limits import TradingLimits
+from tradingbot.risk.manager import RiskManager
+from tradingbot.risk.position_sizer import PositionSizer
 
 
 class TestRiskManager:
@@ -32,7 +34,7 @@ class TestRiskManager:
 
     @pytest.mark.asyncio
     async def test_reject_hold_signal(self):
-        rm, bus = self._make()
+        rm, _bus = self._make()
         signal = SignalEvent(symbol="BTC/USDT", side=SignalSide.HOLD)
         await rm.on_signal(signal)
         assert rm.approved_count == 0
@@ -40,7 +42,7 @@ class TestRiskManager:
 
     @pytest.mark.asyncio
     async def test_reject_daily_loss_exceeded(self):
-        rm, bus = self._make(max_daily_loss=100.0)
+        rm, _bus = self._make(max_daily_loss=100.0)
         rm.update_daily_pnl(-150.0)
         signal = SignalEvent(symbol="BTC/USDT", side=SignalSide.BUY,
                            suggested_price=100.0)
@@ -49,7 +51,7 @@ class TestRiskManager:
 
     @pytest.mark.asyncio
     async def test_reject_max_positions(self):
-        rm, bus = self._make(max_open_positions=1)
+        rm, _bus = self._make(max_open_positions=1)
         rm.update_position("ETH/USDT", 1.0)
         signal = SignalEvent(symbol="BTC/USDT", side=SignalSide.BUY,
                            suggested_price=100.0)
@@ -58,7 +60,7 @@ class TestRiskManager:
 
     @pytest.mark.asyncio
     async def test_reject_circuit_breaker(self):
-        rm, bus = self._make()
+        rm, _bus = self._make()
         rm.activate_circuit_breaker(cooldown_minutes=60)
         signal = SignalEvent(symbol="BTC/USDT", side=SignalSide.BUY,
                            suggested_price=100.0)

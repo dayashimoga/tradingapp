@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 import logging
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
 from tradingbot.core.events import MarketDataEvent
@@ -40,7 +40,7 @@ class DataNormalizer:
             raise ValueError(f"OHLCV list must have at least 6 elements, got {len(ohlcv)}")
 
         timestamp_ms = ohlcv[0]
-        ts = datetime.fromtimestamp(timestamp_ms / 1000, tz=timezone.utc)
+        ts = datetime.fromtimestamp(timestamp_ms / 1000, tz=UTC)
 
         return MarketDataEvent(
             timestamp=ts,

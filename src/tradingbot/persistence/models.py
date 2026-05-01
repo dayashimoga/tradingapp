@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from sqlalchemy import Column, DateTime, Float, Integer, String, Text
 from sqlalchemy.orm import DeclarativeBase
@@ -28,7 +28,7 @@ class TradeRecord(Base):
     order_id = Column(String(100), index=True)
     broker_order_id = Column(String(100))
     strategy_name = Column(String(100))
-    timestamp = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+    timestamp = Column(DateTime, default=lambda: datetime.now(UTC))
     notes = Column(Text, default="")
 
 
@@ -42,8 +42,8 @@ class PositionRecord(Base):
     quantity = Column(Float, nullable=False)
     avg_entry_price = Column(Float, nullable=False)
     current_price = Column(Float, default=0.0)
-    opened_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
-    updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+    opened_at = Column(DateTime, default=lambda: datetime.now(UTC))
+    updated_at = Column(DateTime, default=lambda: datetime.now(UTC))
 
 
 class PortfolioHistory(Base):
@@ -52,7 +52,7 @@ class PortfolioHistory(Base):
     __tablename__ = "portfolio_history"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
-    timestamp = Column(DateTime, default=lambda: datetime.now(timezone.utc), index=True)
+    timestamp = Column(DateTime, default=lambda: datetime.now(UTC), index=True)
     cash = Column(Float, nullable=False)
     total_value = Column(Float, nullable=False)
     positions_value = Column(Float, default=0.0)
@@ -67,7 +67,7 @@ class AlertRecord(Base):
     __tablename__ = "alerts"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
-    timestamp = Column(DateTime, default=lambda: datetime.now(timezone.utc), index=True)
+    timestamp = Column(DateTime, default=lambda: datetime.now(UTC), index=True)
     level = Column(String(20), nullable=False)
     title = Column(String(200), nullable=False)
     message = Column(Text, default="")

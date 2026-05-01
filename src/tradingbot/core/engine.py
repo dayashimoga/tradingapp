@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import contextlib
 import logging
 import signal
 from typing import TYPE_CHECKING
@@ -126,7 +127,7 @@ class Engine:
         """Register OS signal handlers for graceful shutdown."""
         loop = asyncio.get_running_loop()
         for sig in (signal.SIGINT, signal.SIGTERM):
-            try:
+            try:  # noqa: SIM105
                 loop.add_signal_handler(sig, self._handle_shutdown_signal, sig)
             except NotImplementedError:
                 # Windows doesn't support add_signal_handler for all signals
@@ -157,7 +158,7 @@ class Engine:
                 await self.event_bus.publish(event)
                 await asyncio.sleep(interval)
             except asyncio.CancelledError:
-                break
+                pass
             except Exception as exc:
                 logger.error("Heartbeat error: %s", exc)
                 await asyncio.sleep(interval)
@@ -228,10 +229,8 @@ class Engine:
         # Cancel heartbeat
         if self._heartbeat_task and not self._heartbeat_task.done():
             self._heartbeat_task.cancel()
-            try:
+            with contextlib.suppress(asyncio.CancelledError):
                 await self._heartbeat_task
-            except asyncio.CancelledError:
-                pass
 
         # Stop data feeds
         for feed in self._data_feeds:
@@ -241,7 +240,7 @@ class Engine:
                 logger.error("Error stopping data feed: %s", exc)
 
         # Publish shutdown alert
-        try:
+        try:  # noqa: SIM105
             await self.event_bus.publish(
                 AlertEvent(
                     source="engine",
@@ -252,7 +251,7 @@ class Engine:
             )
         except Exception:
             pass
-
+        
         self.event_bus.stop()
         logger.info("Trading engine stopped")
 

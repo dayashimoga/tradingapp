@@ -3,10 +3,9 @@
 from __future__ import annotations
 
 import logging
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import TYPE_CHECKING
 
-from tradingbot.core.event_bus import EventBus
 from tradingbot.core.events import (
     AlertEvent,
     AlertLevel,
@@ -19,6 +18,7 @@ from tradingbot.core.events import (
 
 if TYPE_CHECKING:
     from tradingbot.config.schema import RiskConfig
+    from tradingbot.core.event_bus import EventBus
 
 logger = logging.getLogger(__name__)
 
@@ -78,12 +78,11 @@ class RiskManager:
     @property
     def is_circuit_breaker_active(self) -> bool:
         """Whether the circuit breaker is currently active."""
-        if self._circuit_breaker_active and self._circuit_breaker_until:
-            if datetime.now(timezone.utc) >= self._circuit_breaker_until:
-                self._circuit_breaker_active = False
-                self._circuit_breaker_until = None
-                logger.info("Circuit breaker cooldown expired, resuming trading")
-                return False
+        if self._circuit_breaker_active and self._circuit_breaker_until and datetime.now(UTC) >= self._circuit_breaker_until:
+            self._circuit_breaker_active = False
+            self._circuit_breaker_until = None
+            logger.info("Circuit breaker cooldown expired, resuming trading")
+            return False
         return self._circuit_breaker_active
 
     def update_portfolio_value(self, value: float) -> None:
@@ -92,7 +91,7 @@ class RiskManager:
 
     def update_daily_pnl(self, pnl: float) -> None:
         """Update the daily P&L tracker."""
-        today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+        today = datetime.now(UTC).strftime("%Y-%m-%d")
         if today != self._daily_reset_date:
             self._daily_pnl = 0.0
             self._daily_reset_date = today
@@ -112,7 +111,7 @@ class RiskManager:
         from datetime import timedelta
 
         self._circuit_breaker_active = True
-        self._circuit_breaker_until = datetime.now(timezone.utc) + timedelta(minutes=minutes)
+        self._circuit_breaker_until = datetime.now(UTC) + timedelta(minutes=minutes)
         logger.warning("Circuit breaker activated! Cooldown: %d minutes", minutes)
 
     async def on_signal(self, event: Event) -> None:
@@ -186,9 +185,8 @@ class RiskManager:
             return f"Daily loss limit exceeded: {self._daily_pnl:.2f}"
 
         # Check max open positions (for new positions only)
-        if signal.side == SignalSide.BUY and signal.symbol not in self._open_positions:
-            if len(self._open_positions) >= self._config.max_open_positions:
-                return f"Max open positions reached: {len(self._open_positions)}"
+        if signal.side == SignalSide.BUY and signal.symbol not in self._open_positions and len(self._open_positions) >= self._config.max_open_positions:
+            return f"Max open positions reached: {len(self._open_positions)}"
 
         return None
 

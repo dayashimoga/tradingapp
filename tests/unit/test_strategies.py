@@ -1,13 +1,19 @@
 """Unit tests for trading strategies."""
 
 from __future__ import annotations
+
 import pytest
+
 from tests.conftest import make_market_data
 from tradingbot.core.events import SignalSide
-from tradingbot.strategy.builtin.sma_crossover import SMACrossoverStrategy
-from tradingbot.strategy.builtin.rsi_strategy import RSIStrategy
 from tradingbot.strategy.builtin.bollinger import BollingerBandStrategy
-from tradingbot.strategy.registry import register_strategy, get_strategy, list_strategies, clear_registry
+from tradingbot.strategy.builtin.rsi_strategy import RSIStrategy
+from tradingbot.strategy.builtin.sma_crossover import SMACrossoverStrategy
+from tradingbot.strategy.registry import (
+    clear_registry,
+    get_strategy,
+    list_strategies,
+)
 
 
 class TestSMACrossover:
@@ -16,7 +22,7 @@ class TestSMACrossover:
 
     def test_warmup(self):
         s = self._make()
-        for i in range(4):
+        for _i in range(4):
             s.calculate_signal(make_market_data(100.0))
         assert not s.is_warmed_up
 
@@ -61,7 +67,7 @@ class TestRSI:
 
     def test_warmup(self):
         s = self._make(period=5)
-        for i in range(4):
+        for _i in range(4):
             s.calculate_signal(make_market_data(100.0))
         assert not s.is_warmed_up
 
@@ -99,7 +105,7 @@ class TestBollinger:
 
     def test_warmup(self):
         s = self._make(period=5)
-        for i in range(3):
+        for _i in range(3):
             s.calculate_signal(make_market_data(100.0))
         assert not s.is_warmed_up
 
@@ -144,9 +150,10 @@ class TestRegistry:
         clear_registry()
         # Re-import to re-register built-in strategies
         import importlib
-        import tradingbot.strategy.builtin.sma_crossover
-        import tradingbot.strategy.builtin.rsi_strategy
+
         import tradingbot.strategy.builtin.bollinger
+        import tradingbot.strategy.builtin.rsi_strategy
+        import tradingbot.strategy.builtin.sma_crossover
         importlib.reload(tradingbot.strategy.builtin.sma_crossover)
         importlib.reload(tradingbot.strategy.builtin.rsi_strategy)
         importlib.reload(tradingbot.strategy.builtin.bollinger)

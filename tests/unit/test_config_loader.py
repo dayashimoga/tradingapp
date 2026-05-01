@@ -7,7 +7,13 @@ from pathlib import Path
 import pytest
 import yaml
 
-from tradingbot.config.loader import _parse_env_value, deep_merge, load_config, load_env_overrides, load_yaml_file
+from tradingbot.config.loader import (
+    _parse_env_value,
+    deep_merge,
+    load_config,
+    load_env_overrides,
+    load_yaml_file,
+)
 from tradingbot.config.schema import BotConfig, DataConfig, RiskConfig, TradingBotConfig
 
 
@@ -96,26 +102,26 @@ class TestSchema:
         assert BotConfig(mode="paper").mode == "paper"
 
     def test_invalid_mode(self):
-        with pytest.raises(Exception):
+        with pytest.raises(Exception):  # noqa: B017
             BotConfig(mode="bad")
 
     def test_invalid_log(self):
-        with pytest.raises(Exception):
+        with pytest.raises(Exception):  # noqa: B017
             BotConfig(log_level="BAD")
 
     def test_log_case(self):
         assert BotConfig(log_level="debug").log_level == "DEBUG"
 
     def test_empty_symbols(self):
-        with pytest.raises(Exception):
+        with pytest.raises(Exception):  # noqa: B017
             DataConfig(symbols=[])
 
     def test_invalid_tf(self):
-        with pytest.raises(Exception):
+        with pytest.raises(Exception):  # noqa: B017
             DataConfig(timeframe="2h")
 
     def test_risk_bounds(self):
-        with pytest.raises(Exception):
+        with pytest.raises(Exception):  # noqa: B017
             RiskConfig(max_position_size=1.5)
 
     def test_full_defaults(self):
