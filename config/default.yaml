@@ -1,0 +1,63 @@
+# =============================================================================
+# TradingBot Default Configuration
+# =============================================================================
+
+# --- General ---
+bot:
+  name: "TradingBot"
+  mode: "paper"  # paper | live
+  log_level: "INFO"
+  heartbeat_interval: 30  # seconds
+
+# --- Market Data ---
+data:
+  provider: "ccxt"  # ccxt | alpaca
+  symbols:
+    - "BTC/USDT"
+    - "ETH/USDT"
+  timeframe: "1m"  # 1m, 5m, 15m, 1h, 4h, 1d
+  history_bars: 200  # Number of historical bars to load on startup
+
+# --- Strategy ---
+strategy:
+  name: "sma_crossover"
+  params:
+    fast_period: 10
+    slow_period: 30
+
+# --- Risk Management ---
+risk:
+  max_daily_loss: 500.0         # USD - halt trading if exceeded
+  max_position_size: 0.05       # 5% of portfolio per position
+  max_total_exposure: 0.30      # 30% of portfolio total
+  stop_loss_pct: 0.02           # 2% stop loss per trade
+  take_profit_pct: 0.05         # 5% take profit per trade
+  max_open_positions: 5
+  circuit_breaker:
+    enabled: true
+    volatility_threshold: 3.0   # Standard deviations
+    cooldown_minutes: 30
+
+# --- Execution ---
+execution:
+  retry_attempts: 3
+  retry_delay: 1.0              # seconds (base for exponential backoff)
+  order_timeout: 30             # seconds
+  slippage_tolerance: 0.001     # 0.1%
+
+# --- Persistence ---
+database:
+  url: "sqlite+aiosqlite:///./tradingbot.db"
+  echo: false
+
+# --- Monitoring ---
+monitoring:
+  prometheus:
+    enabled: true
+    port: 9090
+  alerts:
+    telegram:
+      enabled: false
+    email:
+      enabled: false
+  log_format: "json"            # json | console

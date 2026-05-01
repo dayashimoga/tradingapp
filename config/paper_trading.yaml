@@ -1,0 +1,61 @@
+# =============================================================================
+# TradingBot Paper Trading Configuration
+# Safe defaults for simulated trading
+# =============================================================================
+
+bot:
+  name: "TradingBot-Paper"
+  mode: "paper"
+  log_level: "DEBUG"
+  heartbeat_interval: 10
+
+data:
+  provider: "ccxt"
+  symbols:
+    - "BTC/USDT"
+    - "ETH/USDT"
+  timeframe: "1m"
+  history_bars: 200
+
+strategy:
+  name: "sma_crossover"
+  params:
+    fast_period: 10
+    slow_period: 30
+
+risk:
+  max_daily_loss: 1000.0
+  max_position_size: 0.10
+  max_total_exposure: 0.50
+  stop_loss_pct: 0.03
+  take_profit_pct: 0.06
+  max_open_positions: 10
+  circuit_breaker:
+    enabled: true
+    volatility_threshold: 3.0
+    cooldown_minutes: 15
+
+execution:
+  retry_attempts: 3
+  retry_delay: 0.5
+  order_timeout: 30
+  slippage_tolerance: 0.002
+  paper_trading:
+    initial_balance: 100000.0
+    simulated_slippage: 0.0005
+    simulated_latency_ms: 50
+
+database:
+  url: "sqlite+aiosqlite:///./paper_trading.db"
+  echo: false
+
+monitoring:
+  prometheus:
+    enabled: true
+    port: 9090
+  alerts:
+    telegram:
+      enabled: false
+    email:
+      enabled: false
+  log_format: "console"

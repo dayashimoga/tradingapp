@@ -1,0 +1,10 @@
+# Prometheus configuration for TradingBot
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+scrape_configs:
+  - job_name: "tradingbot"
+    static_configs:
+      - targets: ["tradingbot:9090"]
+    metrics_path: /metrics
