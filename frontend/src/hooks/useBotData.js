@@ -1,7 +1,9 @@
 import { useState, useEffect } from 'react';
 
-const API_URL = 'http://127.0.0.1:8000/api';
-const WS_URL = 'ws://127.0.0.1:8000/ws';
+// Use environment variables for production, fallback to localhost for dev
+const BASE_URL = import.meta.env.VITE_API_URL || 'http://127.0.0.1:8000';
+const API_URL = `${BASE_URL}/api`;
+const WS_URL = BASE_URL.replace(/^http/, 'ws') + '/ws';
 
 export function useBotData() {
   const [status, setStatus] = useState(null);

@@ -1,0 +1,28 @@
+bot:
+  name: "Autonomy Live Stocks"
+  mode: "live"
+  initial_capital: 60.0  # Approx Rs. 5000 in USD
+  log_level: "INFO"
+
+data:
+  feed_type: "alpaca"
+  symbols:
+    - "AAPL"
+    - "MSFT"
+    - "TSLA"
+  timeframe: "15Min"
+
+execution:
+  broker_type: "alpaca"
+  dry_run: false
+  # API keys will be securely injected via environment variables:
+  # ALPACA_API_KEY, ALPACA_SECRET_KEY, ALPACA_PAPER=false
+
+risk:
+  max_position_size: 0.10       # Risk maximum 10% of capital ($6) per trade
+  max_open_positions: 3
+  max_daily_loss: 3.0           # Stop trading if we lose $3 in a day
+  max_drawdown_pct: 0.15        # Stop trading if account drops 15% ($9)
+  position_sizing: "fixed_fraction"
+  circuit_breaker_drop_pct: 0.03 # Halt if stock drops 3% suddenly
+  circuit_breaker_cooldown_mins: 60

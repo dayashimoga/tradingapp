@@ -1,0 +1,27 @@
+bot:
+  name: "Autonomy Live Crypto"
+  mode: "live"
+  initial_capital: 60.0  # Approx Rs. 5000 in USD
+  log_level: "INFO"
+
+data:
+  feed_type: "ccxt"
+  symbols:
+    - "BTC/USDT"
+    - "ETH/USDT"
+  timeframe: "15m"
+
+execution:
+  broker_type: "ccxt"
+  dry_run: false
+  # API keys will be securely injected via environment variables:
+  # CCXT_API_KEY, CCXT_SECRET, CCXT_EXCHANGE_ID
+
+risk:
+  max_position_size: 0.05       # Risk maximum 5% of capital ($3) per trade
+  max_open_positions: 2         # Max 2 active pairs
+  max_daily_loss: 2.0           # Stop trading if we lose $2 in a day
+  max_drawdown_pct: 0.10        # Stop trading if account drops 10% ($6)
+  position_sizing: "fixed_fraction"
+  circuit_breaker_drop_pct: 0.05 # Halt if market drops 5% in one tick
+  circuit_breaker_cooldown_mins: 120
