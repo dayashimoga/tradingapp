@@ -22,11 +22,12 @@ class AdvancedAggregator:
     Combines all analytical layers into a single high-confidence trading signal.
     """
 
-    def __init__(self) -> None:
+    def __init__(self, signal_threshold: float = 0.5) -> None:
         self.technical = TechnicalEngine()
         self.microstructure = MicrostructureAnalyzer()
         self.sentiment = SentimentAnalyzer()
         self.ml_predictor = XGBoostPredictor()
+        self.signal_threshold = signal_threshold
         
     def generate_signal(
         self,
@@ -120,9 +121,9 @@ class AdvancedAggregator:
         confidence = 50.0 + (total_score * 25.0)  # Map -2 to 2 into 0 to 100%
         confidence = min(100.0, max(0.0, confidence))
         
-        if total_score > 0.7:
+        if total_score > self.signal_threshold:
             side = SignalSide.BUY
-        elif total_score < -0.7:
+        elif total_score < -self.signal_threshold:
             side = SignalSide.SELL
             
         if side == SignalSide.HOLD:

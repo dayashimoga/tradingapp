@@ -63,10 +63,50 @@ class SimulatedDataFeed(DataFeed):
             len(self._symbols), self._interval,
         )
 
+        import time
+        from datetime import datetime, timezone
+        now = time.time()
+        
+        # INSTANT HISTORY BACKFILL FOR WARMUP
+        logger.info("Backfilling 200 history bars for simulation warmup...")
+        for i in range(200):
+            self._tick_count += 1
+            for symbol in self._symbols:
+                price = self._prices[symbol]
+                base = self._base_prices[symbol]
+                drift = -0.0001 * (price - base) / base
+                shock = random.gauss(0, self._volatility)
+                trend = 0.0003 * math.sin(self._tick_count / 40)
+                change = drift + shock + trend
+                new_price = price * (1 + change)
+                
+                high = new_price * (1 + abs(random.gauss(0, self._volatility * 0.5)))
+                low = new_price * (1 - abs(random.gauss(0, self._volatility * 0.5)))
+                open_price = price
+                volume = random.uniform(100, 50000)
+                self._prices[symbol] = new_price
+
+                ts = datetime.fromtimestamp(now - (200 - i) * self._interval, tz=timezone.utc)
+                event = MarketDataEvent(
+                    source="simulator",
+                    symbol=symbol,
+                    open=round(open_price, 2),
+                    high=round(high, 2),
+                    low=round(low, 2),
+                    close=round(new_price, 2),
+                    volume=round(volume, 2),
+                    timeframe="simulated",
+                    exchange="simulator",
+                    timestamp=ts,
+                )
+                await event_bus.publish(event)
+                
+        logger.info("Backfill complete. Starting live simulation stream.")
+
         while self._running:
             self._tick_count += 1
 
-            for symbol in self._symbols:
+            for symbol in list(self._symbols):
                 price = self._prices[symbol]
                 base = self._base_prices[symbol]
 
@@ -112,3 +152,51 @@ class SimulatedDataFeed(DataFeed):
     def is_connected(self) -> bool:
         """Simulator is always connected."""
         return self._running
+
+    async def add_symbol(self, symbol: str, event_bus: EventBus) -> None:
+        """Dynamically add a symbol and backfill its history."""
+        if symbol not in self._symbols:
+            self._symbols.append(symbol)
+            price = DEFAULT_PRICES.get(symbol, 100.0 + random.uniform(-20, 80))
+            self._prices[symbol] = price
+            self._base_prices[symbol] = price
+            
+            import time
+            from datetime import datetime, timezone
+            now = time.time()
+            local_tick = self._tick_count
+            for i in range(200):
+                local_tick += 1
+                p = self._prices[symbol]
+                b = self._base_prices[symbol]
+                drift = -0.0001 * (p - b) / b
+                shock = random.gauss(0, self._volatility)
+                trend = 0.0003 * math.sin(local_tick / 40)
+                change = drift + shock + trend
+                new_price = p * (1 + change)
+                
+                high = new_price * (1 + abs(random.gauss(0, self._volatility * 0.5)))
+                low = new_price * (1 - abs(random.gauss(0, self._volatility * 0.5)))
+                open_price = p
+                volume = random.uniform(100, 50000)
+                self._prices[symbol] = new_price
+
+                ts = datetime.fromtimestamp(now - (200 - i) * self._interval, tz=timezone.utc)
+                event = MarketDataEvent(
+                    source="simulator",
+                    symbol=symbol,
+                    open=round(open_price, 2),
+                    high=round(high, 2),
+                    low=round(low, 2),
+                    close=round(new_price, 2),
+                    volume=round(volume, 2),
+                    timeframe="simulated",
+                    exchange="simulator",
+                    timestamp=ts,
+                )
+                await event_bus.publish(event)
+                
+    def remove_symbol(self, symbol: str) -> None:
+        """Dynamically remove a symbol."""
+        if symbol in self._symbols:
+            self._symbols.remove(symbol)

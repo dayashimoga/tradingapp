@@ -54,6 +54,8 @@ export function useBotData() {
     }
   };
 
+  const [marketContext, setMarketContext] = useState({});
+
   const setKillSwitch = async (active) => {
     try {
       const res = await fetch(`${API_URL}/risk/kill`, {
@@ -62,6 +64,47 @@ export function useBotData() {
         body: JSON.stringify({ active })
       });
       if (!res.ok) throw new Error('Kill switch failed');
+      return await res.json();
+    } catch (err) {
+      console.error(err);
+      throw err;
+    }
+  };
+
+  const addSymbol = async (symbol) => {
+    try {
+      const res = await fetch(`${API_URL}/symbols`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ symbol })
+      });
+      if (!res.ok) throw new Error('Failed to add symbol');
+      return await res.json();
+    } catch (err) {
+      console.error(err);
+      throw err;
+    }
+  };
+
+  const removeSymbol = async (symbol) => {
+    try {
+      const res = await fetch(`${API_URL}/symbols/${encodeURIComponent(symbol)}`, { method: 'DELETE' });
+      if (!res.ok) throw new Error('Failed to remove symbol');
+      return await res.json();
+    } catch (err) {
+      console.error(err);
+      throw err;
+    }
+  };
+
+  const tuneStrategy = async (strategyName, params) => {
+    try {
+      const res = await fetch(`${API_URL}/strategy/tune`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ strategy_name: strategyName, params })
+      });
+      if (!res.ok) throw new Error('Strategy tune failed');
       return await res.json();
     } catch (err) {
       console.error(err);
@@ -92,15 +135,17 @@ export function useBotData() {
 
     const fetchExtras = async () => {
       try {
-        const [stratRes, analyticsRes, riskRes, healthRes] = await Promise.all([
+        const [stratRes, analyticsRes, riskRes, healthRes, marketRes] = await Promise.all([
           fetch(`${API_URL}/strategies/state`).catch(() => null),
           fetch(`${API_URL}/analytics`).catch(() => null),
           fetch(`${API_URL}/risk/state`).catch(() => null),
           fetch(`${API_URL}/health`).catch(() => null),
+          fetch(`${API_URL}/market/context`).catch(() => null),
         ]);
         if (stratRes?.ok) setStrategyState((await stratRes.json()).states || {});
         if (analyticsRes?.ok) setAnalytics((await analyticsRes.json()).metrics || {});
         if (riskRes?.ok) setRiskState(await riskRes.json());
+        if (marketRes?.ok) setMarketContext(await marketRes.json());
         if (healthRes?.ok) {
           const h = await healthRes.json();
           // Only set if WS hasn't provided health yet
@@ -296,5 +341,6 @@ export function useBotData() {
     status, portfolio, trades, isConnected, logs, ticker, health, error,
     marketHistory, chartMarkers, candleData, strategyState, analytics, riskState,
     signalStats, executeManualTrade, setKillSwitch,
+    addSymbol, removeSymbol, tuneStrategy, marketContext
   };
 }

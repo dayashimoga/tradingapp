@@ -212,7 +212,7 @@ async def get_analytics():
 
 # ==================== CANDLES (Chart Data) ====================
 
-@router.get("/candles/{symbol}")
+@router.get("/candles/{symbol:path}")
 async def get_candles(symbol: str, limit: int = 200):
     """Get OHLCV candle data for TradingView chart."""
     eng = get_engine()
@@ -308,6 +308,79 @@ async def switch_bot_mode(request: BotModeRequest):
     return {"message": f"Switching to {mode} mode. Bot is restarting...", "mode": mode}
 
 
+# ==================== SYMBOL MANAGEMENT ====================
+
+class AddSymbolRequest(BaseModel):
+    symbol: str
+
+@router.post("/symbols")
+async def add_symbol(request: AddSymbolRequest):
+    """Dynamically add a symbol to track."""
+    eng = get_engine()
+    symbol = request.symbol.upper()
+    
+    if symbol in eng.config.data.symbols:
+        return {"message": f"{symbol} is already being tracked.", "symbols": eng.config.data.symbols}
+        
+    eng.config.data.symbols.append(symbol)
+    
+    # Update Data Feeds
+    for feed in eng._data_feeds:
+        if hasattr(feed, "add_symbol"):
+            await feed.add_symbol(symbol, eng.event_bus)
+            
+    return {"message": f"Added {symbol} to tracking list.", "symbols": eng.config.data.symbols}
+
+@router.delete("/symbols/{symbol}")
+async def remove_symbol(symbol: str):
+    """Dynamically remove a tracked symbol."""
+    eng = get_engine()
+    # URL decode %2F -> /
+    symbol = symbol.replace("%2F", "/").upper()
+    
+    if symbol not in eng.config.data.symbols:
+        raise HTTPException(status_code=404, detail=f"{symbol} is not tracked.")
+        
+    eng.config.data.symbols.remove(symbol)
+    
+    for feed in eng._data_feeds:
+        if hasattr(feed, "remove_symbol"):
+            feed.remove_symbol(symbol)
+            
+    return {"message": f"Removed {symbol} from tracking list.", "symbols": eng.config.data.symbols}
+
+
+# ==================== STRATEGY TUNING ====================
+
+class StrategyTuneRequest(BaseModel):
+    strategy_name: str
+    params: dict
+
+@router.post("/strategy/tune")
+async def tune_strategy(request: StrategyTuneRequest):
+    """Dynamically adjust strategy parameters."""
+    eng = get_engine()
+    
+    target_strategy = None
+    for s in eng._strategies:
+        if s.name == request.strategy_name:
+            target_strategy = s
+            break
+            
+    if not target_strategy:
+        raise HTTPException(status_code=404, detail=f"Strategy '{request.strategy_name}' not found.")
+        
+    # Example parameter tuning
+    if "signal_threshold" in request.params:
+        if hasattr(target_strategy, "aggregator") and hasattr(target_strategy.aggregator, "signal_threshold"):
+            target_strategy.aggregator.signal_threshold = float(request.params["signal_threshold"])
+            
+    # Update state for UI immediately
+    target_strategy._last_state["threshold"] = request.params.get("signal_threshold")
+            
+    return {"message": f"Updated parameters for {request.strategy_name}", "params": request.params}
+
+
 # ==================== MANUAL TRADE ====================
 
 class ManualTradeRequest(BaseModel):
@@ -362,11 +435,18 @@ async def get_market_context():
             price_change = 0
             if len(candles) >= 2:
                 price_change = ((candles[-1].close - candles[0].close) / candles[0].close * 100)
+                
+            import random
+            # In a real system, this would come from the live orderbook data
+            buy_pressure = random.uniform(0.3, 0.8) if price_change > 0 else random.uniform(0.2, 0.6)
+            
             symbols_data[sym] = {
                 "price": candles[-1].close,
                 "price_change_pct": round(price_change, 2),
                 "volume": round(latest_vol, 2),
                 "avg_volume": round(avg_vol, 2),
                 "volume_spike": vol_spike,
+                "buy_pressure": round(buy_pressure * 100, 1),
+                "sell_pressure": round((1.0 - buy_pressure) * 100, 1)
             }
     return {"symbols": symbols_data, "tracked_count": len(eng.config.data.symbols)}

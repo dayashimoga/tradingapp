@@ -77,6 +77,7 @@ def _build_engine(config):
     import tradingbot.strategy.builtin.bollinger  # noqa: F401
     import tradingbot.strategy.builtin.rsi_strategy  # noqa: F401
     import tradingbot.strategy.builtin.sma_crossover  # noqa: F401
+    import tradingbot.strategy.builtin.advanced_strategy  # noqa: F401
 
     event_bus = EventBus()
     eng = Engine(config=config, event_bus=event_bus)

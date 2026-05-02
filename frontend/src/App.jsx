@@ -57,11 +57,94 @@ const ManualTradeTerminal = ({ symbols, executeManualTrade }) => {
   );
 };
 
+const AssetManager = ({ symbols, addSymbol, removeSymbol }) => {
+  const [newSymbol, setNewSymbol] = useState('');
+  const [loading, setLoading] = useState(false);
+  const handleAdd = async () => {
+    if (!newSymbol) return;
+    setLoading(true);
+    try { await addSymbol(newSymbol); setNewSymbol(''); }
+    catch (e) { alert('Failed: ' + e.message); }
+    setLoading(false);
+  };
+  return (
+    <div className="glass-panel" style={{ marginBottom: '1rem' }}>
+      <div className="section-header"><div className="section-title"><Box size={16} /> Asset Manager</div></div>
+      <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.5rem' }}>
+        <input placeholder="e.g. SOL/USDT" value={newSymbol} onChange={e => setNewSymbol(e.target.value)} style={{ flex: 1, background: 'rgba(255,255,255,0.1)', border: 'none', color: '#fff', padding: '4px 8px', borderRadius: 4 }} />
+        <button onClick={handleAdd} disabled={loading} style={{ background: 'var(--accent-primary)', color: '#fff', border: 'none', padding: '4px 12px', borderRadius: 4, cursor: 'pointer', fontWeight: 600 }}>{loading ? '...' : 'ADD'}</button>
+      </div>
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
+        {symbols.map(s => (
+          <div key={s} style={{ background: 'rgba(255,255,255,0.05)', padding: '2px 8px', borderRadius: 12, fontSize: '0.75rem', display: 'flex', alignItems: 'center', gap: '4px' }}>
+            {s} <span style={{ cursor: 'pointer', color: 'var(--danger)', fontWeight: 'bold' }} onClick={() => removeSymbol(s)}>×</span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
+
+const StrategyTuner = ({ tuneStrategy }) => {
+  const [threshold, setThreshold] = useState(0.5);
+  const [loading, setLoading] = useState(false);
+  
+  const handleTune = async () => {
+    setLoading(true);
+    try { await tuneStrategy('AdvancedAggregator', { signal_threshold: parseFloat(threshold) }); }
+    catch (e) { alert('Failed: ' + e.message); }
+    setLoading(false);
+  };
+  
+  return (
+    <div className="glass-panel" style={{ marginBottom: '1rem' }}>
+      <div className="section-header"><div className="section-title"><Brain size={16} /> Strategy Tuner</div></div>
+      <div style={{ fontSize: '0.75rem', marginBottom: '0.5rem', color: 'var(--text-muted)' }}>Adjust signal threshold. Lower values = more trades.</div>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+        <input type="range" min="0.1" max="1.5" step="0.1" value={threshold} onChange={e => setThreshold(e.target.value)} style={{ flex: 1, accentColor: 'var(--accent-secondary)' }} />
+        <span style={{ fontWeight: 600, width: '30px' }}>{threshold}</span>
+        <button onClick={handleTune} disabled={loading} style={{ background: 'var(--accent-secondary)', color: '#fff', border: 'none', padding: '4px 12px', borderRadius: 4, cursor: 'pointer', fontWeight: 600 }}>APPLY</button>
+      </div>
+    </div>
+  );
+};
+
+const MarketDepth = ({ marketContext, symbols }) => {
+  return (
+    <div className="glass-panel" style={{ marginBottom: '1rem' }}>
+      <div className="section-header"><div className="section-title"><BarChart3 size={16} /> Microstructure Bias</div></div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+        {symbols.slice(0, 4).map(sym => {
+          const ctx = marketContext?.symbols?.[sym] || { buy_pressure: 50, sell_pressure: 50 };
+          return (
+            <div key={sym} style={{ fontSize: '0.75rem' }}>
+              <div className="flex-between" style={{ marginBottom: '2px' }}>
+                <span style={{ fontWeight: 600 }}>{sym}</span>
+                <span style={{ color: ctx.buy_pressure > 50 ? 'var(--success)' : 'var(--danger)' }}>
+                  {ctx.buy_pressure > 50 ? 'BUY BIAS' : 'SELL BIAS'}
+                </span>
+              </div>
+              <div style={{ display: 'flex', height: '6px', borderRadius: '3px', overflow: 'hidden' }}>
+                <div style={{ width: `${ctx.buy_pressure}%`, background: 'var(--success)' }} />
+                <div style={{ width: `${ctx.sell_pressure}%`, background: 'var(--danger)' }} />
+              </div>
+              <div className="flex-between" style={{ marginTop: '2px', color: 'var(--text-muted)', fontSize: '0.65rem' }}>
+                <span>{ctx.buy_pressure}% Buy</span>
+                <span>{ctx.sell_pressure}% Sell</span>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+};
+
 function App() {
   const {
     status, portfolio, trades, isConnected, logs, ticker, health, marketHistory,
     chartMarkers, candleData, strategyState, analytics, riskState, signalStats,
-    executeManualTrade, setKillSwitch
+    executeManualTrade, setKillSwitch, addSymbol, removeSymbol, tuneStrategy, marketContext
   } = useBotData();
   const terminalRef = useRef(null);
   const [portfolioHistory, setPortfolioHistory] = useState([]);
@@ -250,6 +333,14 @@ function App() {
 
         {/* RIGHT SIDEBAR */}
         <div className="side-stack">
+          
+          <AssetManager symbols={symbols} addSymbol={addSymbol} removeSymbol={removeSymbol} />
+          
+          <div style={{ display: 'flex', gap: '1rem' }}>
+            <div style={{ flex: 1 }}><StrategyTuner tuneStrategy={tuneStrategy} /></div>
+            <div style={{ flex: 1 }}><MarketDepth marketContext={marketContext} symbols={symbols} /></div>
+          </div>
+
           <div className="panel-manual">
             <ManualTradeTerminal symbols={symbols.length > 0 ? symbols : ['BTC/USDT', 'ETH/USDT']} executeManualTrade={executeManualTrade} />
           </div>
@@ -286,6 +377,16 @@ function App() {
                     <>
                       <div className="health-item"><span className="health-label">Upper Band</span><span className="health-value" style={{ fontSize: '0.85rem' }}>${s.upper_band ?? '—'}</span></div>
                       <div className="health-item"><span className="health-label">Lower Band</span><span className="health-value" style={{ fontSize: '0.85rem' }}>${s.lower_band ?? '—'}</span></div>
+                    </>
+                  )}
+                  {s.total_score !== undefined && (
+                    <>
+                      <div className="health-item"><span className="health-label">Consensus</span><span className="health-value" style={{ color: s.total_score > 0 ? '#10b981' : s.total_score < 0 ? '#ef4444' : '#818cf8' }}>{s.total_score > 0 ? '+' : ''}{s.total_score}</span></div>
+                      <div className="health-item"><span className="health-label">Confidence</span><span className="health-value">{s.confidence}%</span></div>
+                      <div className="health-item"><span className="health-label">ML Prob Up</span><span className="health-value" style={{ color: s.ml_prob > 50 ? '#10b981' : s.ml_prob < 50 ? '#ef4444' : '#818cf8' }}>{s.ml_prob}%</span></div>
+                      <div className="health-item"><span className="health-label">Micro Bias</span><span className="health-value" style={{ color: s.micro_bias > 0 ? '#10b981' : s.micro_bias < 0 ? '#ef4444' : '#818cf8' }}>{s.micro_bias > 0 ? '+' : ''}{s.micro_bias}</span></div>
+                      <div className="health-item"><span className="health-label">Macro Bias</span><span className="health-value" style={{ color: s.macro_bias > 0 ? '#10b981' : s.macro_bias < 0 ? '#ef4444' : '#818cf8' }}>{s.macro_bias > 0 ? '+' : ''}{s.macro_bias}</span></div>
+                      <div className="health-item"><span className="health-label">Trend</span><span className="health-value" style={{ fontSize: '0.7rem', color: s.trend?.includes('BULL') ? '#10b981' : s.trend?.includes('BEAR') ? '#ef4444' : '#818cf8' }}>{s.trend}</span></div>
                     </>
                   )}
                   <div className="health-item"><span className="health-label">Data Points</span><span className="health-value">{s.data_points ?? 0}</span></div>
